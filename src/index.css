@@ -1,0 +1,218 @@
+/**
+ * =====================================
+ *    CERTICHAIN DESIGN SYSTEM
+ * =====================================
+ * 
+ * Project: CertiChain Frontend
+ * Type: Certificate Issuance & Verification Platform
+ * 
+ * DESIGN PHILOSOPHY
+ * -----------------
+ * Core Principle: Trust through clarity and professionalism
+ * Design Style: Modern Professional with subtle security accents
+ * Emotion Goal: Confidence, trustworthiness, and clarity
+ * 
+ * COLOR SYSTEM (HSL FORMAT)
+ * -------------
+ * Primary: 220 90% 56% - Trust blue for CTAs and primary actions
+ * Secondary: 142 71% 45% - Success green for verification states
+ * Accent: 262 83% 58% - Security purple for signatures and encryption
+ * Background: Clean slate gray with soft contrast
+ * 
+ * TYPOGRAPHY
+ * ----------
+ * Display: Large, bold headings for certificates
+ * Body: Clear, readable sans-serif for forms and data
+ * 
+ * CERTIFICATE AESTHETIC
+ * --------------------
+ * Professional borders with subtle shadows
+ * QR codes integrated naturally
+ * High contrast for printability
+ * Elegant spacing and hierarchy
+ * 
+ * INTERACTIONS
+ * ------------
+ * Transitions: 200ms for responsiveness
+ * States: Clear hover, active, disabled states
+ * Verification: Instant visual feedback (green/red)
+ * ====================================
+ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 220 13% 18%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 13% 18%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 13% 18%;
+    --primary: 220 90% 56%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 220 13% 18%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
+    --accent: 262 83% 58%;
+    --accent-foreground: 0 0% 100%;
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 220 90% 56%;
+    --radius: 0.5rem;
+  }
+  
+  .dark {
+    --background: 220 13% 9%;
+    --foreground: 0 0% 98%;
+    --card: 220 13% 12%;
+    --card-foreground: 0 0% 98%;
+    --popover: 220 13% 12%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 220 90% 56%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 13% 18%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 220 13% 18%;
+    --muted-foreground: 220 9% 65%;
+    --accent: 262 83% 58%;
+    --accent-foreground: 0 0% 100%;
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 13% 20%;
+    --input: 220 13% 20%;
+    --ring: 220 90% 56%;
+  }
+}
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+}
+
+/* Certificate print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .certificate-canvas {
+    page-break-inside: avoid;
+    box-shadow: none !important;
+  }
+}
+
+/* Success state color utility */
+@layer utilities {
+  .text-success {
+    color: hsl(var(--success));
+  }
+  
+  .bg-success {
+    background-color: hsl(var(--success));
+  }
+  
+  .border-success {
+    border-color: hsl(var(--success));
+  }
+
+  /* Gradient backgrounds */
+  .bg-gradient-primary {
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%);
+  }
+
+  .bg-gradient-success {
+    background: linear-gradient(135deg, hsl(var(--success)) 0%, hsl(142 71% 35%) 100%);
+  }
+
+  .bg-gradient-dark {
+    background: linear-gradient(135deg, hsl(220 13% 12%) 0%, hsl(220 13% 18%) 100%);
+  }
+
+  /* Enhanced gradient text */
+  .bg-gradient-to-r {
+    background-image: linear-gradient(to right, var(--tw-gradient-stops));
+  }
+
+  .from-primary {
+    --tw-gradient-from: hsl(var(--primary));
+    --tw-gradient-to: hsl(var(--primary) / 0);
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+  }
+
+  .via-accent {
+    --tw-gradient-to: hsl(var(--accent) / 0);
+    --tw-gradient-stops: var(--tw-gradient-from), hsl(var(--accent)), var(--tw-gradient-to);
+  }
+
+  .to-accent {
+    --tw-gradient-to: hsl(var(--accent));
+  }
+
+  .to-primary {
+    --tw-gradient-to: hsl(var(--primary));
+  }
+
+  /* Glass morphism effect */
+  .glass {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .dark .glass {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  /* Animated gradient */
+  @keyframes gradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  .animate-gradient {
+    background-size: 200% 200%;
+    animation: gradient 8s ease infinite;
+  }
+
+  /* Shine effect */
+  @keyframes shine {
+    to {
+      background-position: 200% center;
+    }
+  }
+
+  .animate-shine {
+    background: linear-gradient(110deg, transparent 33%, rgba(255,255,255,0.1) 50%, transparent 66%);
+    background-size: 200% 100%;
+    animation: shine 2s infinite;
+  }
+
+  /* Pulse glow */
+  @keyframes pulse-glow {
+    0%, 100% {
+      box-shadow: 0 0 5px rgba(var(--primary), 0.5);
+    }
+    50% {
+      box-shadow: 0 0 20px rgba(var(--primary), 0.8);
+    }
+  }
+
+  .animate-pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+}
