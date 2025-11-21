@@ -11,13 +11,30 @@ import IssuePage from './pages/IssuePage';
 import VerifyPage from './pages/VerifyPage';
 import DashboardPage from './pages/DashboardPage';
 import NotFoundPage from './pages/NotFoundPage';
+import { Alert, AlertDescription, AlertTitle } from './components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
 function App() {
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  const isConfigured = supabaseUrl && supabaseAnonKey;
+
   return (
     <ThemeProvider defaultTheme="system" storageKey="certichain-theme">
       <Router>
         <div className="min-h-screen flex flex-col">
         <Header />
+        {!isConfigured && (
+          <div className="container py-4">
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Configuration Error</AlertTitle>
+              <AlertDescription>
+                Environment variables are not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.
+              </AlertDescription>
+            </Alert>
+          </div>
+        )}
         <main className="flex-1">
           <Routes>
             <Route path="/" element={<HomePage />} />
