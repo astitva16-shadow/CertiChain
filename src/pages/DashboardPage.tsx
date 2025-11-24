@@ -40,7 +40,7 @@ import {
   Search,
   Filter
 } from 'lucide-react';
-import { certificateService } from '@/lib/sdk';
+import { getCertificatesForUser, revokeCertificate } from '@/lib/certificates';
 import { useToast } from '@/hooks/use-toast';
 import type { CertificateRecord } from '@/lib/types';
 import { AuthDialog } from '@/components/AuthDialog';
@@ -72,8 +72,11 @@ export function DashboardPage() {
 
     setIsLoading(true);
     try {
-      const certs = await certificateService.getUserCertificates(user.uid);
-      setCertificates(certs);
+      const { data, error } = await getCertificatesForUser(user.id);
+      if (error) {
+        throw error;
+      }
+      setCertificates(data || []);
     } catch (error) {
       console.error('Failed to load certificates:', error);
       toast({
@@ -102,7 +105,7 @@ export function DashboardPage() {
       filtered = filtered.filter(cert =>
         cert.recipient_name.toLowerCase().includes(query) ||
         cert.course_name.toLowerCase().includes(query) ||
-        cert.cert_uuid.toLowerCase().includes(query)
+        cert.certificate_id.toLowerCase().includes(query)
       );
     }
 
@@ -110,14 +113,11 @@ export function DashboardPage() {
   };
 
   const handleRevoke = async (cert: CertificateRecord) => {
-    if (!user) return;
-
     try {
-      await certificateService.revokeCertificate(
-        cert,
-        user.uid,
-        'Revoked by issuer via dashboard'
-      );
+      const { error } = await revokeCertificate(cert.certificate_id);
+      if (error) {
+        throw error;
+      }
 
       toast({
         title: 'Certificate revoked',
@@ -281,13 +281,13 @@ export function DashboardPage() {
                     </TableHeader>
                     <TableBody>
                       {filteredCerts.map((cert) => (
-                        <TableRow key={cert._id}>
+                        <TableRow key={cert.id}>
                           <TableCell className="font-medium">
                             {cert.recipient_name}
                           </TableCell>
                           <TableCell>{cert.course_name}</TableCell>
                           <TableCell className="text-muted-foreground">
-                            {formatDate(cert.created_at)}
+                            {formatDate(cert.issued_at)}
                           </TableCell>
                           <TableCell>
                             {cert.status === 'active' ? (
@@ -309,7 +309,7 @@ export function DashboardPage() {
                                 size="sm"
                                 asChild
                               >
-                                <Link to={`/verify/${cert.cert_uuid}`}>
+                                <Link to={`/verify/${cert.certificate_id}`}>
                                   <ExternalLink className="w-4 h-4" />
                                 </Link>
                               </Button>

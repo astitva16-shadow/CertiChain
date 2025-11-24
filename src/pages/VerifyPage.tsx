@@ -24,7 +24,7 @@ import {
   AlertTriangle,
   Search
 } from 'lucide-react';
-import { certificateService } from '@/lib/sdk';
+import { getCertificateByUuid } from '@/lib/certificates';
 import { createCanonicalPayload, verifySignature, importPublicKey } from '@/lib/cert-utils';
 import type { CertificateRecord, VerificationResult, AuditEvent } from '@/lib/types';
 
@@ -50,9 +50,9 @@ export function VerifyPage() {
 
     try {
       // Fetch certificate from database
-      const cert = await certificateService.getCertificateByUUID(uuid);
+      const { data: cert, error } = await getCertificateByUuid(uuid);
 
-      if (!cert) {
+      if (error || !cert) {
         setError('Certificate not found');
         setVerification({
           verified: false,
@@ -67,7 +67,7 @@ export function VerifyPage() {
       if (cert.status === 'revoked') {
         setVerification({
           verified: false,
-          reason: `Certificate was revoked on ${new Date(cert.revoked_at!).toLocaleDateString()}`,
+          reason: 'Certificate has been revoked by the issuer.',
           certificate: cert
         });
         return;
@@ -75,21 +75,18 @@ export function VerifyPage() {
 
       // Reconstruct canonical payload
       const payload = createCanonicalPayload({
-        cert_uuid: cert.cert_uuid,
+        cert_uuid: cert.certificate_id,
         recipient_name: cert.recipient_name,
         course_name: cert.course_name,
         issuer_name: cert.issuer_name,
-        issue_date: cert.issue_date
+        issue_date: cert.issued_at
       });
 
-      // Get public key from localStorage (this would be fetched from a key server in production)
-      const publicKeyPem = localStorage.getItem('DEVV_PUBLIC_KEY');
-      const fingerprint = localStorage.getItem('DEVV_KEY_FINGERPRINT');
-
+      const publicKeyPem = cert.public_key;
       if (!publicKeyPem) {
         setVerification({
           verified: false,
-          reason: 'Public key not available for verification. Certificate may have been issued with a different key.',
+          reason: 'Public key missing. Certificate cannot be verified.',
           certificate: cert
         });
         return;
@@ -106,7 +103,7 @@ export function VerifyPage() {
           verified: true,
           reason: 'Signature verified successfully. Certificate is authentic.',
           certificate: cert,
-          publicKeyFingerprint: fingerprint || undefined
+          publicKeyFingerprint: cert.fingerprint
         });
       } else {
         setVerification({
@@ -141,12 +138,12 @@ export function VerifyPage() {
   };
 
   const getAuditLog = (): AuditEvent[] => {
-    if (!certificate?.audit_log) return [];
-    try {
-      return JSON.parse(certificate.audit_log);
-    } catch {
+    if (!certificate?.metadata || typeof certificate.metadata !== 'object') {
       return [];
     }
+    const raw = (certificate.metadata as Record<string, unknown>)?.audit;
+    if (!Array.isArray(raw)) return [];
+    return raw as AuditEvent[];
   };
 
   // Search form (no UUID in URL)
@@ -264,7 +261,7 @@ export function VerifyPage() {
           <div className="flex items-center justify-between">
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Certificate UUID</p>
-              <p className="font-mono text-sm">{certificate?.cert_uuid}</p>
+              <p className="font-mono text-sm">{certificate?.certificate_id}</p>
             </div>
             <Badge variant={verification?.verified ? 'default' : 'destructive'} className="text-sm">
               {certificate?.status === 'revoked' ? 'REVOKED' : verification?.verified ? 'VALID' : 'INVALID'}
@@ -285,11 +282,11 @@ export function VerifyPage() {
                 {certificate && (
                   <CertificateCanvas
                     payload={createCanonicalPayload({
-                      cert_uuid: certificate.cert_uuid,
+                      cert_uuid: certificate.certificate_id,
                       recipient_name: certificate.recipient_name,
                       course_name: certificate.course_name,
                       issuer_name: certificate.issuer_name,
-                      issue_date: certificate.issue_date
+                      issue_date: certificate.issued_at
                     })}
                     signature={certificate.signature}
                   />
@@ -336,7 +333,7 @@ export function VerifyPage() {
                   <div className="space-y-1">
                     <p className="text-sm text-muted-foreground">Issue Date</p>
                     <p className="font-semibold">
-                      {certificate?.issue_date && formatDate(certificate.issue_date)}
+                      {certificate?.issued_at && formatDate(certificate.issued_at)}
                     </p>
                   </div>
                 </div>

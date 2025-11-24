@@ -24,7 +24,7 @@ import {
   downloadFile,
   formatDateISO
 } from '@/lib/cert-utils';
-import { certificateService } from '@/lib/sdk';
+import { issueCertificate } from '@/lib/certificates';
 import { Loader2, FileCheck, AlertTriangle, Shield, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import * as htmlToImage from 'html-to-image';
@@ -32,13 +32,13 @@ import jsPDF from 'jspdf';
 
 export function IssuePage() {
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { user, profile, session, isAuthenticated } = useAuth();
   const { toast } = useToast();
   
   const [formData, setFormData] = useState({
     recipient_name: '',
     course_name: '',
-    issuer_name: user?.name || '',
+    issuer_name: profile?.full_name || user?.email || '',
     issue_date: formatDateISO(new Date()),
     notes: ''
   });
@@ -62,6 +62,15 @@ export function IssuePage() {
     e.preventDefault();
     
     if (!isAuthenticated || !user) {
+      setShowAuthDialog(true);
+      return;
+    }
+    if (!session?.access_token) {
+      toast({
+        title: 'Session expired',
+        description: 'Please sign in again to issue certificates.',
+        variant: 'destructive',
+      });
       setShowAuthDialog(true);
       return;
     }
@@ -105,35 +114,32 @@ export function IssuePage() {
       // Export and store public key for verification
       const publicKeyPem = await exportPublicKey(keyPair.publicKey);
       const fingerprint = await generateFingerprint(keyPair.publicKey);
-      
-      localStorage.setItem('DEVV_PUBLIC_KEY', publicKeyPem);
-      localStorage.setItem('DEVV_KEY_FINGERPRINT', fingerprint);
 
-      // Step 4: Save to database
-      const auditLog = [{
-        action: 'created',
-        timestamp: new Date().toISOString(),
-        userId: user.uid,
-        userName: user.name,
-        ip: 'client',
-        userAgent: navigator.userAgent
-      }];
-
-      await certificateService.createCertificate({
-        _uid: user.uid,
-        cert_uuid,
-        recipient_name: formData.recipient_name,
-        course_name: formData.course_name,
-        issuer_name: formData.issuer_name,
-        issue_date: formData.issue_date,
-        signature,
-        status: 'active',
-        created_at: new Date().toISOString(),
-        created_by: user.uid,
-        audit_log: JSON.stringify(auditLog),
-        notes: formData.notes || '',
-        role: 'issuer'
-      });
+      // Step 4: Persist via server-side API
+      await issueCertificate(
+        {
+          certificate_id: cert_uuid,
+          recipient_name: formData.recipient_name,
+          course_name: formData.course_name,
+          issuer_name: formData.issuer_name,
+          issued_at: formData.issue_date,
+          notes: formData.notes || '',
+          metadata: {
+            audit: [
+              {
+                action: 'created',
+                timestamp: new Date().toISOString(),
+                userId: user.id,
+                userAgent: navigator.userAgent,
+              },
+            ],
+          },
+          signature,
+          public_key: publicKeyPem,
+          fingerprint,
+        },
+        session.access_token
+      );
 
       toast({
         title: 'Certificate created!',
@@ -403,7 +409,12 @@ export function IssuePage() {
       <AuthDialog
         open={showAuthDialog}
         onOpenChange={setShowAuthDialog}
-        onSuccess={() => setFormData(prev => ({ ...prev, issuer_name: user?.name || '' }))}
+        onSuccess={() =>
+          setFormData(prev => ({
+            ...prev,
+            issuer_name: profile?.full_name || user?.email || '',
+          }))
+        }
       />
     </div>
   );

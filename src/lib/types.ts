@@ -3,22 +3,22 @@
  */
 
 export interface CertificateRecord {
-  _uid: string; // Devv user ID
-  _id: string; // Auto-generated unique ID
-  cert_uuid: string; // Certificate UUID v4
+  id: string;
+  certificate_id: string;
+  user_id: string;
   recipient_name: string;
   course_name: string;
+  issued_at: string;
   issuer_name: string;
-  issue_date: string; // ISO 8601
-  signature: string; // Base64 RSA-PSS signature
+  signature: string;
+  public_key: string;
+  fingerprint?: string | null;
   status: 'active' | 'revoked';
-  created_at: string; // ISO 8601
-  created_by: string; // User ID
-  revoked_at?: string; // ISO 8601
-  revoked_by?: string; // User ID
-  audit_log: string; // JSON array of AuditEvent[]
-  notes?: string;
-  role?: string; // issuer, verifier, admin
+  created_at: string;
+  updated_at?: string | null;
+  notes?: string | null;
+  metadata?: Record<string, unknown> | null;
+  signature_url?: string | null;
 }
 
 export interface AuditEvent {
@@ -51,17 +51,15 @@ export interface VerificationResult {
   verified: boolean;
   reason: string;
   certificate?: CertificateRecord;
-  publicKeyFingerprint?: string;
+  publicKeyFingerprint?: string | null;
 }
 
-export interface User {
-  projectId: string;
-  uid: string;
-  name: string;
+export interface Profile {
+  id: string;
   email: string;
-  createdTime: number;
-  lastLoginTime: number;
-  role?: 'issuer' | 'verifier' | 'admin';
+  full_name?: string | null;
+  avatar_url?: string | null;
+  organization?: string | null;
 }
 
 export interface SignatureKeyPair {
